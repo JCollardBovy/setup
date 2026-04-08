@@ -68,8 +68,8 @@ apply_defaults_value() {
   local domain="$1"
   local key="$2"
   local value_type="$3"
-  local expected="$4"
-  run defaults write "$domain" "$key" "$value_type" "$expected"
+  local write_value="$4"
+  run defaults write "$domain" "$key" "$value_type" "$write_value"
 }
 
 reconcile_check_apply() {
@@ -100,19 +100,19 @@ reconcile_system_policy() {
   reconcile_check_apply "Automatic login disabled" check_auto_login_disabled apply_auto_login_disabled
 
   section "INFO" "Reconciling macOS defaults"
-  reconcile_default "ApplePressAndHoldEnabled disabled" NSGlobalDomain ApplePressAndHoldEnabled -bool 0
+  reconcile_default "ApplePressAndHoldEnabled disabled" NSGlobalDomain ApplePressAndHoldEnabled -bool false 0
   reconcile_default "KeyRepeat set to 1" NSGlobalDomain KeyRepeat -int 1
   reconcile_default "InitialKeyRepeat set to 10" NSGlobalDomain InitialKeyRepeat -int 10
-  reconcile_default "Finder shows hidden files" com.apple.finder AppleShowAllFiles -bool 1
-  reconcile_default "Finder shows status bar" com.apple.finder ShowStatusBar -bool 1
-  reconcile_default "Finder shows path bar" com.apple.finder ShowPathbar -bool 1
-  reconcile_default "Dock autohide enabled" com.apple.dock autohide -bool 1
-  reconcile_default "Dock recents disabled" com.apple.dock show-recents -bool 0
-  reconcile_default "Safari shows full URL" com.apple.Safari ShowFullURLInSmartSearchField -bool 1
-  reconcile_default "Safari safe downloads disabled" com.apple.Safari AutoOpenSafeDownloads -bool 0
-  reconcile_default "Automatic updates check enabled" com.apple.SoftwareUpdate AutomaticCheckEnabled -bool 1
-  reconcile_default "App Store auto update enabled" com.apple.commerce AutoUpdate -bool 1
-  reconcile_default "App Store restart updates enabled" com.apple.commerce AutoUpdateRestartRequired -bool 1
+  reconcile_default "Finder shows hidden files" com.apple.finder AppleShowAllFiles -bool true 1
+  reconcile_default "Finder shows status bar" com.apple.finder ShowStatusBar -bool true 1
+  reconcile_default "Finder shows path bar" com.apple.finder ShowPathbar -bool true 1
+  reconcile_default "Dock autohide enabled" com.apple.dock autohide -bool true 1
+  reconcile_default "Dock recents disabled" com.apple.dock show-recents -bool false 0
+  reconcile_default "Safari shows full URL" com.apple.Safari ShowFullURLInSmartSearchField -bool true 1
+  reconcile_default "Safari safe downloads disabled" com.apple.Safari AutoOpenSafeDownloads -bool false 0
+  reconcile_default "Automatic updates check enabled" com.apple.SoftwareUpdate AutomaticCheckEnabled -bool true 1
+  reconcile_default "App Store auto update enabled" com.apple.commerce AutoUpdate -bool true 1
+  reconcile_default "App Store restart updates enabled" com.apple.commerce AutoUpdateRestartRequired -bool true 1
 
   section "APPLY" "Refreshing Dock and Finder"
   run killall Dock
@@ -124,13 +124,14 @@ reconcile_default() {
   local domain="$2"
   local key="$3"
   local value_type="$4"
-  local expected="$5"
+  local write_value="$5"
+  local expected="${6:-$5}"
 
   if check_defaults_value "$domain" "$key" "$expected"; then
     record_system_status compliant "$label"
   else
     section "APPLY" "$label"
-    apply_defaults_value "$domain" "$key" "$value_type" "$expected"
+    apply_defaults_value "$domain" "$key" "$value_type" "$write_value"
     record_system_status changed "$label"
   fi
 }
