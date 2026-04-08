@@ -65,7 +65,11 @@ apply_cli_category_filter() {
     fi
     filtered+=("$category")
   done
-  SELECTED_CATEGORIES=("${filtered[@]}")
+  if [[ "$(array_size filtered)" -eq 0 ]]; then
+    SELECTED_CATEGORIES=()
+  else
+    SELECTED_CATEGORIES=("${filtered[@]}")
+  fi
 }
 
 read_type_for_category() {
@@ -98,22 +102,22 @@ resolve_desired_packages() {
 
   while IFS= read -r item; do
     [[ -n "$item" ]] || continue
-    DESIRED_BREW+=("${item,,}")
+    DESIRED_BREW+=("$(to_lower "$item")")
   done <<< "$(printf '%s' "$temp_brew" | dedupe_lines)"
 
   while IFS= read -r item; do
     [[ -n "$item" ]] || continue
-    DESIRED_CASK+=("${item,,}")
+    DESIRED_CASK+=("$(to_lower "$item")")
   done <<< "$(printf '%s' "$temp_cask" | dedupe_lines)"
 
   while IFS= read -r item; do
     [[ -n "$item" ]] || continue
-    DESIRED_NPM+=("${item,,}")
+    DESIRED_NPM+=("$(to_lower "$item")")
   done <<< "$(printf '%s' "$temp_npm" | dedupe_lines)"
 
   while IFS= read -r item; do
     [[ -n "$item" ]] || continue
-    DESIRED_PIP+=("${item,,}")
+    DESIRED_PIP+=("$(to_lower "$item")")
   done <<< "$(printf '%s' "$temp_pip" | dedupe_lines)"
 
   remove_overrides DESIRED_BREW brew
@@ -128,25 +132,29 @@ remove_overrides() {
   local removals=()
   read_lines_to_array removals yq -r ".overrides.\"$package_type\".remove[]?" "$CONFIG_FILE"
 
-  [[ "${#removals[@]}" -gt 0 ]] || return 0
+  [[ "$(array_size removals)" -gt 0 ]] || return 0
 
   local current=()
-  eval "current=(\"\${$array_name[@]}\")"
+  eval "current=(\"\${$array_name[@]-}\")"
   local filtered=()
   local item
-  for item in "${current[@]}"; do
-    if ! array_contains "$item" "${removals[@]}"; then
+  for item in "${current[@]-}"; do
+    if ! array_contains "$item" "${removals[@]-}"; then
       filtered+=("$item")
     fi
   done
-  eval "$array_name=(\"\${filtered[@]}\")"
+  if [[ "$(array_size filtered)" -eq 0 ]]; then
+    eval "$array_name=()"
+  else
+    eval "$array_name=(\"\${filtered[@]-}\")"
+  fi
 }
 
 print_selection_summary() {
   section "INFO" "Enabled categories: ${SELECTED_CATEGORIES[*]}"
   echo "Desired state"
-  echo "  brew: ${#DESIRED_BREW[@]}"
-  echo "  cask: ${#DESIRED_CASK[@]}"
-  echo "  npm: ${#DESIRED_NPM[@]}"
-  echo "  pip: ${#DESIRED_PIP[@]}"
+  echo "  brew: $(array_size DESIRED_BREW)"
+  echo "  cask: $(array_size DESIRED_CASK)"
+  echo "  npm: $(array_size DESIRED_NPM)"
+  echo "  pip: $(array_size DESIRED_PIP)"
 }

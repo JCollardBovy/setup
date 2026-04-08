@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -euo pipefail
+set -eo pipefail
 
 log() {
   if [[ "${VERBOSE:-false}" == "true" ]]; then
@@ -57,21 +57,38 @@ array_contains() {
   return 1
 }
 
+array_size() {
+  local array_name="$1"
+  local count=0
+  eval "count=\${#$array_name[@]}"
+  printf '%s' "$count"
+}
+
 dedupe_lines() {
   awk 'NF && !seen[$0]++'
+}
+
+to_lower() {
+  printf '%s' "$1" | tr '[:upper:]' '[:lower:]'
 }
 
 print_block() {
   local title="$1"
   shift
   local items=("$@")
-  if [[ "${#items[@]}" -eq 0 ]]; then
+  local visible=()
+  local item
+  for item in "${items[@]}"; do
+    [[ -n "$item" ]] || continue
+    visible+=("$item")
+  done
+
+  if [[ "${#visible[@]}" -eq 0 ]]; then
     return 0
   fi
 
   echo "$title"
-  local item
-  for item in "${items[@]}"; do
+  for item in "${visible[@]}"; do
     echo "  - $item"
   done
 }
