@@ -1,0 +1,32 @@
+enabled_categories:
+  - android
+  - aws
+  - browser
+  - communication
+  - design
+  - development
+  - display
+  - entertainment
+  - ios
+  - js
+  - jvm
+  - llm
+  - media
+  - organisation
+  - scripting
+  - terminal
+  - terraform
+
+overrides:
+  brew:
+    add: []
+    remove: []
+  cask:
+    add: []
+    remove: []
+  npm:
+    add: []
+    remove: []
+  pip:
+    add: []
+    remove: []

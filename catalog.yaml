@@ -1,0 +1,134 @@
+categories:
+  android:
+    cask:
+      - android-commandlinetools
+      - android-studio-preview@canary
+
+  aws:
+    brew:
+      - awscli
+      - awslogs
+
+  browser:
+    cask:
+      - google-chrome
+
+  communication:
+    cask:
+      - slack
+      - whatsapp
+
+  container:
+    brew:
+      - colima
+    cask:
+      - docker
+
+  development:
+    brew:
+      - firebase-cli
+      - git
+      - gh
+      - gradle
+      - postgresql
+    cask:
+      - claude-code
+      - codex
+      - intellij-idea
+
+  documents:
+    cask: []
+
+  design:
+    cask:
+      - figma
+
+  display:
+    brew:
+      - displayplacer
+    cask:
+      - lunar
+      - rectangle
+
+  entertainment:
+    cask:
+      - steam
+      - vlc
+
+  ios:
+    brew:
+      - cocoapods
+    cask:
+      - github-copilot-for-xcode
+
+  jvm:
+    cask:
+      - corretto@21
+
+  js:
+    cask:
+      - nvs
+    npm:
+      - csv-writer
+      - dotenv
+      - fs-extra
+      - puppeteer
+      - puppeteer-extra
+      - puppeteer-extra-plugin-stealth
+
+  llm:
+    cask:
+      - chatgpt
+      - claude
+      - ollama
+
+  media:
+    cask:
+      - capcut
+
+  network:
+    brew: []
+
+  organisation:
+    cask:
+      - asana
+      - drawio
+      - miro
+      - obsidian
+      - thebrain
+
+  python:
+    brew: []
+
+  secTools:
+    brew: []
+
+  security:
+    brew:
+      - openssh
+
+  scripting:
+    brew:
+      - bash
+      - chroma
+      - coreutils
+      - jq
+      - ki
+      - kotlin
+      - kscript
+      - zsh
+      - zsh-autocomplete
+      - zsh-autosuggestions
+      - zsh-syntax-highlighting
+
+  terminal:
+    brew:
+      - powerlevel10k
+      - itermocil
+    cask:
+      - iterm2
+
+  terraform:
+    brew:
+      - tfswitch
+      - tgswitch

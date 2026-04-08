@@ -1,0 +1,92 @@
+#!/bin/bash
+
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+DRY_RUN=false
+VERBOSE=false
+SKIP_UPDATES=false
+SKIP_INSTALL=false
+SKIP_SYSTEM=false
+SKIP_XCODE=false
+CATEGORY_FILTERS=()
+
+source "$ROOT_DIR/lib/core.sh"
+source "$ROOT_DIR/lib/config.sh"
+source "$ROOT_DIR/lib/reconcile-packages.sh"
+source "$ROOT_DIR/lib/reconcile-system.sh"
+source "$ROOT_DIR/lib/reconcile-xcode.sh"
+
+usage() {
+  cat <<'EOF'
+Usage: ./script [options]
+
+Options:
+  --dry-run          Print actions without applying changes
+  --verbose          Enable informational logging
+  --skip-updates     Skip package updates
+  --skip-install     Skip package installation
+  --skip-system      Skip security and macOS defaults reconciliation
+  --skip-xcode       Skip Xcode reconciliation
+  --category NAME    Restrict reconciliation to an enabled category
+  --help             Show this message
+EOF
+}
+
+while [[ "$#" -gt 0 ]]; do
+  case "$1" in
+    --dry-run) DRY_RUN=true ;;
+    --verbose) VERBOSE=true ;;
+    --skip-updates) SKIP_UPDATES=true ;;
+    --skip-install) SKIP_INSTALL=true ;;
+    --skip-system) SKIP_SYSTEM=true ;;
+    --skip-xcode) SKIP_XCODE=true ;;
+    --category)
+      shift
+      [[ "$#" -gt 0 ]] || error "Missing value for --category"
+      CATEGORY_FILTERS+=("$1")
+      ;;
+    --help)
+      usage
+      exit 0
+      ;;
+    *)
+      error "Unknown option: $1"
+      ;;
+  esac
+  shift
+done
+
+CATALOG_FILE="$ROOT_DIR/catalog.yaml"
+CONFIG_FILE="$ROOT_DIR/config.yaml"
+
+section "INFO" "Bootstrapping dependencies"
+install_homebrew_if_needed
+if has_command brew; then
+  persist_homebrew_shellenv
+  ensure_yq_if_needed
+elif [[ "$DRY_RUN" == "true" ]]; then
+  warn "brew is not installed; dry-run is reporting bootstrap actions only"
+else
+  error "brew is not available after bootstrap"
+fi
+
+section "INFO" "Loading configuration"
+validate_config_files
+load_declared_categories
+load_selected_categories
+validate_category_selection
+apply_cli_category_filter
+resolve_desired_packages
+print_selection_summary
+
+reconcile_packages
+reconcile_xcode
+reconcile_system_policy
+
+print_package_report
+print_xcode_report
+print_system_report
+
+section "DONE" "Setup reconciliation complete"
