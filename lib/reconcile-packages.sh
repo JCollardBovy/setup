@@ -53,10 +53,10 @@ load_installed_packages() {
 normalize_parseable_names() {
   local array_name="$1"
   local current=()
-  eval "current=(\"\${$array_name[@]-}\")"
+  eval "current=(\"\${$array_name[@]}\")"
   local normalized=()
   local item
-  for item in "${current[@]-}"; do
+  for item in "${current[@]}"; do
     normalized+=("${item##*/}")
   done
   lowercase_array normalized
@@ -70,10 +70,10 @@ normalize_parseable_names() {
 normalize_freeze_names() {
   local array_name="$1"
   local current=()
-  eval "current=(\"\${$array_name[@]-}\")"
+  eval "current=(\"\${$array_name[@]}\")"
   local normalized=()
   local item
-  for item in "${current[@]-}"; do
+  for item in "${current[@]}"; do
     normalized+=("${item%%==*}")
   done
   lowercase_array normalized
@@ -87,10 +87,10 @@ normalize_freeze_names() {
 lowercase_array() {
   local array_name="$1"
   local current=()
-  eval "current=(\"\${$array_name[@]-}\")"
+  eval "current=(\"\${$array_name[@]}\")"
   local normalized=()
   local item
-  for item in "${current[@]-}"; do
+  for item in "${current[@]}"; do
     normalized+=("$(to_lower "$item")")
   done
   if [[ "$(array_size normalized)" -eq 0 ]]; then
@@ -124,12 +124,12 @@ compute_missing() {
   local desired_name="$2"
   local installed_name="$3"
   local desired=() installed=() result=()
-  eval "desired=(\"\${$desired_name[@]-}\")"
-  eval "installed=(\"\${$installed_name[@]-}\")"
+  eval "desired=(\"\${$desired_name[@]}\")"
+  eval "installed=(\"\${$installed_name[@]}\")"
 
   local item
-  for item in "${desired[@]-}"; do
-    if ! array_contains "$item" "${installed[@]-}"; then
+  for item in "${desired[@]}"; do
+    if ! array_contains "$item" "${installed[@]}"; then
       result+=("$item")
     fi
   done
@@ -145,12 +145,12 @@ compute_extra() {
   local installed_name="$2"
   local desired_name="$3"
   local desired=() installed=() result=()
-  eval "desired=(\"\${$desired_name[@]-}\")"
-  eval "installed=(\"\${$installed_name[@]-}\")"
+  eval "desired=(\"\${$desired_name[@]}\")"
+  eval "installed=(\"\${$installed_name[@]}\")"
 
   local item
-  for item in "${installed[@]-}"; do
-    if ! array_contains "$item" "${desired[@]-}"; then
+  for item in "${installed[@]}"; do
+    if ! array_contains "$item" "${desired[@]}"; then
       result+=("$item")
     fi
   done
@@ -166,12 +166,12 @@ compute_managed_outdated() {
   local outdated_name="$2"
   local desired_name="$3"
   local outdated=() desired=() result=()
-  eval "outdated=(\"\${$outdated_name[@]-}\")"
-  eval "desired=(\"\${$desired_name[@]-}\")"
+  eval "outdated=(\"\${$outdated_name[@]}\")"
+  eval "desired=(\"\${$desired_name[@]}\")"
 
   local item
-  for item in "${outdated[@]-}"; do
-    if array_contains "$item" "${desired[@]-}"; then
+  for item in "${outdated[@]}"; do
+    if array_contains "$item" "${desired[@]}"; then
       result+=("$item")
     fi
   done
@@ -207,7 +207,7 @@ classify_outdated_casks() {
   DEFERRED_CASK_UPGRADES=()
 
   local cask
-  for cask in "${OUTDATED_CASK[@]-}"; do
+  for cask in "${OUTDATED_CASK[@]}"; do
     if is_cask_deferred_if_running "$cask" && is_cask_running "$cask"; then
       DEFERRED_CASK_UPGRADES+=("$cask")
     else
@@ -218,16 +218,16 @@ classify_outdated_casks() {
 
 print_package_plan() {
   section "PLAN" "Package reconciliation"
-  print_block "Missing brew" "${MISSING_BREW[@]-}"
-  print_block "Missing cask" "${MISSING_CASK[@]-}"
-  print_block "Missing npm" "${MISSING_NPM[@]-}"
-  print_block "Missing pip" "${MISSING_PIP[@]-}"
-  print_block "Outdated brew" "${OUTDATED_BREW[@]-}"
-  print_block "Outdated cask" "${UPGRADABLE_CASK[@]-}"
-  print_block "Deferred cask upgrades because the app is running" "${DEFERRED_CASK_UPGRADES[@]-}"
+  print_block "Missing brew" "${MISSING_BREW[@]}"
+  print_block "Missing cask" "${MISSING_CASK[@]}"
+  print_block "Missing npm" "${MISSING_NPM[@]}"
+  print_block "Missing pip" "${MISSING_PIP[@]}"
+  print_block "Outdated brew" "${OUTDATED_BREW[@]}"
+  print_block "Outdated cask" "${UPGRADABLE_CASK[@]}"
+  print_block "Deferred cask upgrades because the app is running" "${DEFERRED_CASK_UPGRADES[@]}"
   if [[ "${#CATEGORY_FILTERS[@]}" -eq 0 ]]; then
-    print_block "Extra explicit brew installs not declared" "${EXTRA_BREW[@]-}"
-    print_block "Extra casks not declared" "${EXTRA_CASK[@]-}"
+    print_block "Extra explicit brew installs not declared" "${EXTRA_BREW[@]}"
+    print_block "Extra casks not declared" "${EXTRA_CASK[@]}"
   else
     echo "Extra package drift is skipped during category-scoped runs."
   fi
@@ -251,14 +251,14 @@ reconcile_packages() {
 install_missing_packages() {
   if [[ "$(array_size MISSING_BREW)" -gt 0 ]]; then
     section "APPLY" "Installing missing brew formulae"
-    run brew install "${MISSING_BREW[@]-}"
-    APPLIED_INSTALLS+=("${MISSING_BREW[@]-}")
+    run brew install "${MISSING_BREW[@]}"
+    APPLIED_INSTALLS+=("${MISSING_BREW[@]}")
   fi
 
   if [[ "$(array_size MISSING_CASK)" -gt 0 ]]; then
     section "APPLY" "Installing missing casks"
-    run brew install --cask "${MISSING_CASK[@]-}"
-    APPLIED_INSTALLS+=("${MISSING_CASK[@]-}")
+    run brew install --cask "${MISSING_CASK[@]}"
+    APPLIED_INSTALLS+=("${MISSING_CASK[@]}")
   fi
 
   if [[ "$(array_size MISSING_NPM)" -gt 0 ]]; then
@@ -266,8 +266,8 @@ install_missing_packages() {
       warn "npm not found; skipping npm installs"
     else
       section "APPLY" "Installing missing npm packages"
-      run npm install -g "${MISSING_NPM[@]-}"
-      APPLIED_INSTALLS+=("${MISSING_NPM[@]-}")
+      run npm install -g "${MISSING_NPM[@]}"
+      APPLIED_INSTALLS+=("${MISSING_NPM[@]}")
     fi
   fi
 
@@ -276,8 +276,8 @@ install_missing_packages() {
       warn "pip3 not found; skipping pip installs"
     else
       section "APPLY" "Installing missing pip packages"
-      run pip3 install "${MISSING_PIP[@]-}"
-      APPLIED_INSTALLS+=("${MISSING_PIP[@]-}")
+      run pip3 install "${MISSING_PIP[@]}"
+      APPLIED_INSTALLS+=("${MISSING_PIP[@]}")
     fi
   fi
 }
@@ -290,39 +290,39 @@ update_existing_packages() {
 
   if [[ "$(array_size OUTDATED_BREW)" -gt 0 ]]; then
     section "APPLY" "Upgrading outdated brew formulae"
-    run brew upgrade "${OUTDATED_BREW[@]-}"
-    APPLIED_UPGRADES+=("${OUTDATED_BREW[@]-}")
+    run brew upgrade "${OUTDATED_BREW[@]}"
+    APPLIED_UPGRADES+=("${OUTDATED_BREW[@]}")
   fi
 
   if [[ "$(array_size UPGRADABLE_CASK)" -gt 0 ]]; then
     section "APPLY" "Upgrading outdated casks"
-    run brew upgrade --cask "${UPGRADABLE_CASK[@]-}"
-    APPLIED_UPGRADES+=("${UPGRADABLE_CASK[@]-}")
+    run brew upgrade --cask "${UPGRADABLE_CASK[@]}"
+    APPLIED_UPGRADES+=("${UPGRADABLE_CASK[@]}")
   fi
 
   if has_command npm && [[ "$(array_size DESIRED_NPM)" -gt 0 ]]; then
     section "APPLY" "Updating managed npm packages"
-    run npm update -g "${DESIRED_NPM[@]-}"
+    run npm update -g "${DESIRED_NPM[@]}"
   fi
 
   if has_command pip3 && [[ "$(array_size DESIRED_PIP)" -gt 0 ]]; then
     section "APPLY" "Updating managed pip packages"
-    run pip3 install --upgrade "${DESIRED_PIP[@]-}"
+    run pip3 install --upgrade "${DESIRED_PIP[@]}"
   fi
 }
 
 print_package_report() {
   section "REPORT" "Packages"
   if [[ "${DRY_RUN:-false}" == "true" ]]; then
-    print_block "Planned installs" "${APPLIED_INSTALLS[@]-}"
-    print_block "Planned upgrades" "${APPLIED_UPGRADES[@]-}"
+    print_block "Planned installs" "${APPLIED_INSTALLS[@]}"
+    print_block "Planned upgrades" "${APPLIED_UPGRADES[@]}"
   else
-    print_block "Installed" "${APPLIED_INSTALLS[@]-}"
-    print_block "Upgraded" "${APPLIED_UPGRADES[@]-}"
+    print_block "Installed" "${APPLIED_INSTALLS[@]}"
+    print_block "Upgraded" "${APPLIED_UPGRADES[@]}"
   fi
-  print_block "Deferred cask upgrades because the app is running" "${DEFERRED_CASK_UPGRADES[@]-}"
+  print_block "Deferred cask upgrades because the app is running" "${DEFERRED_CASK_UPGRADES[@]}"
   if [[ "${#CATEGORY_FILTERS[@]}" -eq 0 ]]; then
-    print_block "Manual follow-up: undeclared explicit brew installs" "${EXTRA_BREW[@]-}"
-    print_block "Manual follow-up: undeclared casks" "${EXTRA_CASK[@]-}"
+    print_block "Manual follow-up: undeclared explicit brew installs" "${EXTRA_BREW[@]}"
+    print_block "Manual follow-up: undeclared casks" "${EXTRA_CASK[@]}"
   fi
 }

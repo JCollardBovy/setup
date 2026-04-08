@@ -135,18 +135,18 @@ remove_overrides() {
   [[ "$(array_size removals)" -gt 0 ]] || return 0
 
   local current=()
-  eval "current=(\"\${$array_name[@]-}\")"
+  eval "current=(\"\${$array_name[@]}\")"
   local filtered=()
   local item
-  for item in "${current[@]-}"; do
-    if ! array_contains "$item" "${removals[@]-}"; then
+  for item in "${current[@]}"; do
+    if ! array_contains "$item" "${removals[@]}"; then
       filtered+=("$item")
     fi
   done
   if [[ "$(array_size filtered)" -eq 0 ]]; then
     eval "$array_name=()"
   else
-    eval "$array_name=(\"\${filtered[@]-}\")"
+    eval "$array_name=(\"\${filtered[@]}\")"
   fi
 }
 
