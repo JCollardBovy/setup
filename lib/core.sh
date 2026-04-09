@@ -93,6 +93,24 @@ print_block() {
   done
 }
 
+copy_if_missing() {
+  local source_path="$1"
+  local target_path="$2"
+
+  if [[ -f "$target_path" ]]; then
+    return 0
+  fi
+
+  [[ -f "$source_path" ]] || error "Missing source file for bootstrap copy: $source_path"
+
+  mkdir -p "$(dirname "$target_path")"
+  if [[ "${DRY_RUN:-false}" == "true" ]]; then
+    printf '[DRY RUN] cp %s %s\n' "$source_path" "$target_path"
+  else
+    cp "$source_path" "$target_path"
+  fi
+}
+
 append_result() {
   local array_name="$1"
   local value="$2"

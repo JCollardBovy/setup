@@ -2,6 +2,7 @@
 
 SYSTEM_CHANGED=()
 SYSTEM_COMPLIANT=()
+SYSTEM_WARNINGS=()
 
 record_system_status() {
   local status="$1"
@@ -9,7 +10,26 @@ record_system_status() {
   case "$status" in
     changed) SYSTEM_CHANGED+=("$label") ;;
     compliant) SYSTEM_COMPLIANT+=("$label") ;;
+    warning) SYSTEM_WARNINGS+=("$label") ;;
   esac
+}
+
+run_noncritical() {
+  local label="$1"
+  shift
+
+  if [[ "${DRY_RUN:-false}" == "true" ]]; then
+    run "$@"
+    return 0
+  fi
+
+  if "$@"; then
+    return 0
+  fi
+
+  warn "$label failed"
+  record_system_status warning "$label"
+  return 1
 }
 
 check_touch_id_sudo() {
@@ -17,8 +37,8 @@ check_touch_id_sudo() {
 }
 
 apply_touch_id_sudo() {
-  run sudo cp /etc/pam.d/sudo_local.template /etc/pam.d/sudo_local
-  run sudo sed -i '' '3s/.*/auth       sufficient     pam_tid.so/' /etc/pam.d/sudo_local
+  run_noncritical "Touch ID for sudo copy" sudo cp /etc/pam.d/sudo_local.template /etc/pam.d/sudo_local || return 1
+  run_noncritical "Touch ID for sudo enable" sudo sed -i '' '3s/.*/auth       sufficient     pam_tid.so/' /etc/pam.d/sudo_local
 }
 
 check_firewall_enabled() {
@@ -26,7 +46,7 @@ check_firewall_enabled() {
 }
 
 apply_firewall_enabled() {
-  run sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on
+  run_noncritical "Firewall enable" sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on
 }
 
 check_remote_login_disabled() {
@@ -34,7 +54,7 @@ check_remote_login_disabled() {
 }
 
 apply_remote_login_disabled() {
-  run sudo systemsetup -f -setremotelogin off
+  run_noncritical "Remote login disable" sudo systemsetup -f -setremotelogin off
 }
 
 check_guest_disabled() {
@@ -44,7 +64,7 @@ check_guest_disabled() {
 }
 
 apply_guest_disabled() {
-  run sudo defaults write /Library/Preferences/com.apple.loginwindow GuestEnabled -bool false
+  run_noncritical "Guest account disable" sudo defaults write /Library/Preferences/com.apple.loginwindow GuestEnabled -bool false
 }
 
 check_auto_login_disabled() {
@@ -52,7 +72,7 @@ check_auto_login_disabled() {
 }
 
 apply_auto_login_disabled() {
-  run sudo defaults delete /Library/Preferences/com.apple.loginwindow autoLoginUser
+  run_noncritical "Automatic login disable" sudo defaults delete /Library/Preferences/com.apple.loginwindow autoLoginUser
 }
 
 check_defaults_value() {
@@ -69,7 +89,7 @@ apply_defaults_value() {
   local key="$2"
   local value_type="$3"
   local write_value="$4"
-  run defaults write "$domain" "$key" "$value_type" "$write_value"
+  run_noncritical "defaults write $domain $key" defaults write "$domain" "$key" "$value_type" "$write_value"
 }
 
 reconcile_check_apply() {
@@ -81,8 +101,9 @@ reconcile_check_apply() {
     record_system_status compliant "$label"
   else
     section "APPLY" "$label"
-    "$apply_fn"
-    record_system_status changed "$label"
+    if "$apply_fn"; then
+      record_system_status changed "$label"
+    fi
   fi
 }
 
@@ -115,8 +136,8 @@ reconcile_system_policy() {
   reconcile_default "App Store restart updates enabled" com.apple.commerce AutoUpdateRestartRequired -bool true 1
 
   section "APPLY" "Refreshing Dock and Finder"
-  run killall Dock
-  run killall Finder
+  run_noncritical "Dock refresh" killall Dock || true
+  run_noncritical "Finder refresh" killall Finder || true
 }
 
 reconcile_default() {
@@ -131,8 +152,9 @@ reconcile_default() {
     record_system_status compliant "$label"
   else
     section "APPLY" "$label"
-    apply_defaults_value "$domain" "$key" "$value_type" "$write_value"
-    record_system_status changed "$label"
+    if apply_defaults_value "$domain" "$key" "$value_type" "$write_value"; then
+      record_system_status changed "$label"
+    fi
   fi
 }
 
@@ -144,4 +166,5 @@ print_system_report() {
     print_block "Changed" "${SYSTEM_CHANGED[@]}"
   fi
   print_block "Already compliant" "${SYSTEM_COMPLIANT[@]}"
+  print_block "Warnings" "${SYSTEM_WARNINGS[@]}"
 }

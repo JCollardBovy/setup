@@ -3,6 +3,9 @@
 set -eo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+USER_SETUP_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/setup"
+DEFAULT_CATALOG_FILE="$ROOT_DIR/catalog.yaml"
+DEFAULT_CONFIG_FILE="$ROOT_DIR/config.yaml"
 
 DRY_RUN=false
 VERBOSE=false
@@ -15,6 +18,7 @@ CATEGORY_FILTERS=()
 source "$ROOT_DIR/lib/core.sh"
 source "$ROOT_DIR/lib/config.sh"
 source "$ROOT_DIR/lib/reconcile-packages.sh"
+source "$ROOT_DIR/lib/reconcile-shell.sh"
 source "$ROOT_DIR/lib/reconcile-system.sh"
 source "$ROOT_DIR/lib/reconcile-xcode.sh"
 
@@ -58,8 +62,8 @@ while [[ "$#" -gt 0 ]]; do
   shift
 done
 
-CATALOG_FILE="$ROOT_DIR/catalog.yaml"
-CONFIG_FILE="$ROOT_DIR/config.yaml"
+CATALOG_FILE="$USER_SETUP_DIR/catalog.yaml"
+CONFIG_FILE="$USER_SETUP_DIR/config.yaml"
 
 section "INFO" "Bootstrapping dependencies"
 install_homebrew_if_needed
@@ -72,6 +76,10 @@ else
   error "brew is not available after bootstrap"
 fi
 
+section "INFO" "Bootstrapping user setup data"
+copy_if_missing "$DEFAULT_CATALOG_FILE" "$CATALOG_FILE"
+copy_if_missing "$DEFAULT_CONFIG_FILE" "$CONFIG_FILE"
+
 section "INFO" "Loading configuration"
 validate_config_files
 load_declared_categories
@@ -82,10 +90,12 @@ resolve_desired_packages
 print_selection_summary
 
 reconcile_packages
+reconcile_shell
 reconcile_xcode
 reconcile_system_policy
 
 print_package_report
+print_shell_report
 print_xcode_report
 print_system_report
 
